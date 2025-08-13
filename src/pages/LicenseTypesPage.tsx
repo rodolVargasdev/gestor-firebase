@@ -94,9 +94,14 @@ export const LicenseTypesPage: React.FC = () => {
   }, []);
 
   const filteredLicenseTypes = licenseTypes.filter(type => {
-    const matchesSearch = type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         type.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         type.description.toLowerCase().includes(searchTerm.toLowerCase());
+    // Verificar que las propiedades existan antes de usar toLowerCase()
+    const name = type.name || '';
+    const code = type.code || '';
+    const description = type.description || '';
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         description.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = filterCategory === 'all' || type.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || 
@@ -286,17 +291,18 @@ export const LicenseTypesPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Categoría
                   </label>
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                  >
-                    <option value="all">Todas las categorías</option>
-                    <option value="personal">Personal</option>
-                    <option value="medica">Médica</option>
-                    <option value="familiar">Familiar</option>
-                    <option value="administrativa">Administrativa</option>
-                  </select>
+                                      <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    >
+                      <option value="all">Todas las categorías</option>
+                      <option value="Personal">Personal</option>
+                      <option value="Enfermedad">Enfermedad</option>
+                      <option value="Familiar">Familiar</option>
+                      <option value="Maternidad">Maternidad</option>
+                      <option value="Administrativa">Administrativa</option>
+                    </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
