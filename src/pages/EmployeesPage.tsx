@@ -12,12 +12,15 @@ import {
   Building,
   Calendar,
   Mail,
-  Phone,
   Filter,
   Search,
   UserPlus,
   UserCheck,
-  UserX
+  UserX,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 
 interface Employee {
@@ -44,124 +47,55 @@ interface Employee {
   updatedAt: Date;
 }
 
-// Datos de ejemplo para empleados
-const SAMPLE_EMPLOYEES: Employee[] = [
-  {
-    id: '1',
-    employeeId: 'EMP001',
-    firstName: 'María',
-    lastName: 'González',
-    email: 'maria.gonzalez@empresa.com',
-    phone: '+502 1234-5678',
-    position: 'Desarrollador Senior',
-    department: 'Tecnología',
-    hireDate: new Date('2022-03-15'),
-    salary: 8500,
-    status: 'active',
-    gender: 'female',
-    birthDate: new Date('1990-05-20'),
-    address: 'Zona 10, Ciudad de Guatemala',
-    emergencyContact: {
-      name: 'Carlos González',
-      phone: '+502 9876-5432',
-      relationship: 'Esposo'
-    },
-    createdAt: new Date('2022-03-15'),
-    updatedAt: new Date('2024-01-15')
-  },
-  {
-    id: '2',
-    employeeId: 'EMP002',
-    firstName: 'Juan',
-    lastName: 'Rodríguez',
-    email: 'juan.rodriguez@empresa.com',
-    phone: '+502 2345-6789',
-    position: 'Analista de Recursos Humanos',
-    department: 'Recursos Humanos',
-    hireDate: new Date('2021-08-10'),
-    salary: 7200,
-    status: 'active',
-    gender: 'male',
-    birthDate: new Date('1988-12-03'),
-    address: 'Zona 15, Ciudad de Guatemala',
-    emergencyContact: {
-      name: 'Ana Rodríguez',
-      phone: '+502 8765-4321',
-      relationship: 'Esposa'
-    },
-    createdAt: new Date('2021-08-10'),
-    updatedAt: new Date('2024-02-20')
-  },
-  {
-    id: '3',
-    employeeId: 'EMP003',
-    firstName: 'Carmen',
-    lastName: 'López',
-    email: 'carmen.lopez@empresa.com',
-    phone: '+502 3456-7890',
-    position: 'Contadora',
-    department: 'Finanzas',
-    hireDate: new Date('2023-01-20'),
-    salary: 6800,
-    status: 'active',
-    gender: 'female',
-    birthDate: new Date('1992-07-14'),
-    address: 'Zona 7, Ciudad de Guatemala',
-    emergencyContact: {
-      name: 'Roberto López',
-      phone: '+502 7654-3210',
-      relationship: 'Padre'
-    },
-    createdAt: new Date('2023-01-20'),
-    updatedAt: new Date('2024-03-10')
-  },
-  {
-    id: '4',
-    employeeId: 'EMP004',
-    firstName: 'Luis',
-    lastName: 'Martínez',
-    email: 'luis.martinez@empresa.com',
-    phone: '+502 4567-8901',
-    position: 'Gerente de Ventas',
-    department: 'Ventas',
-    hireDate: new Date('2020-11-05'),
-    salary: 9200,
-    status: 'active',
-    gender: 'male',
-    birthDate: new Date('1985-03-28'),
-    address: 'Zona 14, Ciudad de Guatemala',
-    emergencyContact: {
-      name: 'Patricia Martínez',
-      phone: '+502 6543-2109',
-      relationship: 'Esposa'
-    },
-    createdAt: new Date('2020-11-05'),
-    updatedAt: new Date('2024-01-30')
-  },
-  {
-    id: '5',
-    employeeId: 'EMP005',
-    firstName: 'Sofia',
-    lastName: 'Hernández',
-    email: 'sofia.hernandez@empresa.com',
-    phone: '+502 5678-9012',
-    position: 'Diseñadora UX/UI',
-    department: 'Tecnología',
-    hireDate: new Date('2023-06-12'),
-    salary: 7500,
-    status: 'on_leave',
-    gender: 'female',
-    birthDate: new Date('1995-09-18'),
-    address: 'Zona 13, Ciudad de Guatemala',
-    emergencyContact: {
-      name: 'Miguel Hernández',
-      phone: '+502 5432-1098',
-      relationship: 'Hermano'
-    },
-    createdAt: new Date('2023-06-12'),
-    updatedAt: new Date('2024-04-05')
-  }
-];
+// Datos de ejemplo para empleados (simulando 5000+ empleados)
+const generateSampleEmployees = (count: number): Employee[] => {
+  const departments = ['Tecnología', 'Recursos Humanos', 'Finanzas', 'Ventas', 'Marketing', 'Operaciones', 'Legal', 'Administración'];
+  const positions = [
+    'Desarrollador Senior', 'Analista de RH', 'Contador', 'Gerente de Ventas', 'Diseñador UX/UI',
+    'Desarrollador Junior', 'Asistente de RH', 'Auxiliar Contable', 'Vendedor', 'Marketing Manager',
+    'DevOps Engineer', 'Recruiter', 'Auditor', 'Sales Representative', 'Content Creator',
+    'QA Engineer', 'HR Specialist', 'Financial Analyst', 'Account Manager', 'SEO Specialist'
+  ];
+  const statuses: ('active' | 'inactive' | 'on_leave')[] = ['active', 'active', 'active', 'active', 'on_leave'];
+  const genders: ('male' | 'female' | 'other')[] = ['male', 'female', 'other'];
+
+  return Array.from({ length: count }, (_, index) => {
+    const employeeId = `EMP${String(index + 1).padStart(4, '0')}`;
+    const firstName = `Empleado${index + 1}`;
+    const lastName = `Apellido${index + 1}`;
+    const department = departments[Math.floor(Math.random() * departments.length)];
+    const position = positions[Math.floor(Math.random() * positions.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const gender = genders[Math.floor(Math.random() * genders.length)];
+    
+    return {
+      id: String(index + 1),
+      employeeId,
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@empresa.com`,
+      phone: `+502 ${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      position,
+      department,
+      hireDate: new Date(2020 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+      salary: Math.floor(Math.random() * 8000) + 3000,
+      status,
+      gender,
+      birthDate: new Date(1980 + Math.floor(Math.random() * 30), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+      address: `Zona ${Math.floor(Math.random() * 20) + 1}, Ciudad de Guatemala`,
+      emergencyContact: {
+        name: `Contacto${index + 1}`,
+        phone: `+502 ${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+        relationship: ['Esposo', 'Esposa', 'Padre', 'Madre', 'Hermano', 'Hermana'][Math.floor(Math.random() * 6)]
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  });
+};
+
+// Generar 5000 empleados de ejemplo
+const SAMPLE_EMPLOYEES: Employee[] = generateSampleEmployees(5000);
 
 // Departamentos de ejemplo
 const DEPARTMENTS = [
@@ -182,6 +116,10 @@ export const EmployeesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [employeesPerPage] = useState(12);
 
   // Simular carga de datos
   useEffect(() => {
@@ -209,6 +147,17 @@ export const EmployeesPage: React.FC = () => {
 
     return matchesSearch && matchesDepartment && matchesStatus;
   });
+
+  // Calcular paginación
+  const indexOfLastEmployee = currentPage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+  const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterDepartment, filterStatus]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -245,13 +194,6 @@ export const EmployeesPage: React.FC = () => {
     }).format(date);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-GT', {
-      style: 'currency',
-      currency: 'GTQ'
-    }).format(amount);
-  };
-
   const handleCreateNew = () => {
     navigate('/employees/new');
   };
@@ -268,6 +210,99 @@ export const EmployeesPage: React.FC = () => {
     if (confirm('¿Estás seguro de que quieres eliminar este empleado?')) {
       setEmployees(prev => prev.filter(emp => emp.id !== id));
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Botón "Primera página"
+    if (startPage > 1) {
+      buttons.push(
+        <Button
+          key="first"
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(1)}
+          className="px-2"
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+      );
+    }
+
+    // Botón "Anterior"
+    if (currentPage > 1) {
+      buttons.push(
+        <Button
+          key="prev"
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          className="px-2"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      );
+    }
+
+    // Números de página
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <Button
+          key={i}
+          variant={i === currentPage ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(i)}
+          className="px-3"
+        >
+          {i}
+        </Button>
+      );
+    }
+
+    // Botón "Siguiente"
+    if (currentPage < totalPages) {
+      buttons.push(
+        <Button
+          key="next"
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          className="px-2"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      );
+    }
+
+    // Botón "Última página"
+    if (endPage < totalPages) {
+      buttons.push(
+        <Button
+          key="last"
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(totalPages)}
+          className="px-2"
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      );
+    }
+
+    return buttons;
   };
 
   if (loading) {
@@ -324,7 +359,7 @@ export const EmployeesPage: React.FC = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{employees.length}</div>
+                <div className="text-2xl font-bold">{employees.length.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
                   Empleados registrados
                 </p>
@@ -337,7 +372,7 @@ export const EmployeesPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {employees.filter(e => e.status === 'active').length}
+                  {employees.filter(e => e.status === 'active').length.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Empleados activos
@@ -351,7 +386,7 @@ export const EmployeesPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-yellow-600">
-                  {employees.filter(e => e.status === 'on_leave').length}
+                  {employees.filter(e => e.status === 'on_leave').length.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   En permiso temporal
@@ -433,9 +468,19 @@ export const EmployeesPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Results Info */}
+          <div className="mb-4 flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Mostrando {indexOfFirstEmployee + 1} a {Math.min(indexOfLastEmployee, filteredEmployees.length)} de {filteredEmployees.length.toLocaleString()} empleados
+            </div>
+            <div className="text-sm text-gray-600">
+              Página {currentPage} de {totalPages}
+            </div>
+          </div>
+
           {/* Employees Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {currentEmployees.map((employee) => (
               <Card key={employee.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -464,10 +509,6 @@ export const EmployeesPage: React.FC = () => {
                       <span className="text-gray-600">{employee.email}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-sm">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{employee.phone}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm">
                       <Building className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-600">{employee.department}</span>
                     </div>
@@ -476,10 +517,6 @@ export const EmployeesPage: React.FC = () => {
                       <span className="text-gray-600">
                         Contratado: {formatDate(employee.hireDate)}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Salario:</span>
-                      <span className="font-medium">{formatCurrency(employee.salary)}</span>
                     </div>
                   </div>
                   
@@ -516,6 +553,13 @@ export const EmployeesPage: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-2 mb-8">
+              {renderPaginationButtons()}
+            </div>
+          )}
 
           {filteredEmployees.length === 0 && (
             <div className="text-center py-12">
