@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LicenseTypesPage } from './pages/LicenseTypesPage';
+import { EmployeesPage } from './pages/EmployeesPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthService } from './services/authService';
 import { useAuthStore } from './stores/authStore';
@@ -115,17 +116,71 @@ function App() {
             path="/employees" 
             element={
               <ProtectedRoute>
+                <EmployeesPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/employees/new" 
+            element={
+              <ProtectedRoute>
                 <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                   <div className="text-center">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Gestión de Empleados
+                      Crear Nuevo Empleado
                     </h2>
                     <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la Fase 3.
+                      Esta funcionalidad estará disponible en la siguiente iteración.
                     </p>
                     <button 
                       onClick={() => window.history.back()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    >
+                      Volver
+                    </button>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/employees/edit/:id" 
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                      Editar Empleado
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                      Esta funcionalidad estará disponible en la siguiente iteración.
+                    </p>
+                    <button 
+                      onClick={() => window.history.back()}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    >
+                      Volver
+                    </button>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/employees/view/:id" 
+            element={
+              <ProtectedRoute>
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                      Ver Empleado
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                      Esta funcionalidad estará disponible en la siguiente iteración.
+                    </p>
+                    <button 
+                      onClick={() => window.history.back()}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                     >
                       Volver
                     </button>
