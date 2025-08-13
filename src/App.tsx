@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LicenseTypesPage } from './pages/LicenseTypesPage';
 import { EmployeesPage } from './pages/EmployeesPage';
+import { RequestsPage } from './pages/RequestsPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthService } from './services/authService';
 import { useAuthStore } from './stores/authStore';
@@ -189,29 +190,83 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/requests" 
-            element={
-              <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Sistema de Solicitudes
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la Fase 4.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
+                           <Route
+                   path="/requests"
+                   element={
+                     <ProtectedRoute>
+                       <RequestsPage />
+                     </ProtectedRoute>
+                   }
+                 />
+                 <Route
+                   path="/requests/new"
+                   element={
+                     <ProtectedRoute>
+                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                         <div className="text-center">
+                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                             Nueva Solicitud de Licencia
+                           </h2>
+                           <p className="text-gray-600 mb-4">
+                             Esta funcionalidad estará disponible en la siguiente iteración.
+                           </p>
+                           <button
+                             onClick={() => window.history.back()}
+                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                           >
+                             Volver
+                           </button>
+                         </div>
+                       </div>
+                     </ProtectedRoute>
+                   }
+                 />
+                 <Route
+                   path="/requests/edit/:id"
+                   element={
+                     <ProtectedRoute>
+                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                         <div className="text-center">
+                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                             Editar Solicitud
+                           </h2>
+                           <p className="text-gray-600 mb-4">
+                             Esta funcionalidad estará disponible en la siguiente iteración.
+                           </p>
+                           <button
+                             onClick={() => window.history.back()}
+                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                           >
+                             Volver
+                           </button>
+                         </div>
+                       </div>
+                     </ProtectedRoute>
+                   }
+                 />
+                 <Route
+                   path="/requests/view/:id"
+                   element={
+                     <ProtectedRoute>
+                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                         <div className="text-center">
+                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                             Ver Solicitud
+                           </h2>
+                           <p className="text-gray-600 mb-4">
+                             Esta funcionalidad estará disponible en la siguiente iteración.
+                           </p>
+                           <button
+                             onClick={() => window.history.back()}
+                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                           >
+                             Volver
+                           </button>
+                         </div>
+                       </div>
+                     </ProtectedRoute>
+                   }
+                 />
           <Route 
             path="/reports" 
             element={
