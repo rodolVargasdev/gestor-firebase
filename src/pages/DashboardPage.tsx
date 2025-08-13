@@ -4,18 +4,18 @@ import { Button } from '../components/ui/button';
 import { 
   Users, 
   FileText, 
-  Calendar, 
   Settings, 
   LogOut, 
   Home,
   BarChart3,
   Clock,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -23,6 +23,10 @@ export const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
 
   const stats = [
@@ -51,10 +55,10 @@ export const DashboardPage: React.FC = () => {
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Días Disponibles',
-      value: '1,247',
-      change: '-3%',
-      icon: Calendar,
+      title: 'Tipos de Licencia',
+      value: '16',
+      change: '0%',
+      icon: Settings,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }
@@ -62,31 +66,31 @@ export const DashboardPage: React.FC = () => {
 
   const quickActions = [
     {
+      title: 'Gestionar Tipos de Licencia',
+      description: 'Configurar permisos laborales',
+      icon: Settings,
+      action: () => handleNavigation('/license-types'),
+      color: 'bg-purple-500 hover:bg-purple-600'
+    },
+    {
       title: 'Nueva Solicitud',
       description: 'Crear solicitud de permiso',
       icon: FileText,
-      href: '#',
+      action: () => handleNavigation('/requests/new'),
       color: 'bg-blue-500 hover:bg-blue-600'
     },
     {
       title: 'Gestionar Empleados',
       description: 'Ver y editar empleados',
       icon: Users,
-      href: '#',
+      action: () => handleNavigation('/employees'),
       color: 'bg-green-500 hover:bg-green-600'
-    },
-    {
-      title: 'Tipos de Licencia',
-      description: 'Configurar permisos',
-      icon: Settings,
-      href: '#',
-      color: 'bg-purple-500 hover:bg-purple-600'
     },
     {
       title: 'Reportes',
       description: 'Ver estadísticas',
       icon: BarChart3,
-      href: '#',
+      action: () => handleNavigation('/reports'),
       color: 'bg-orange-500 hover:bg-orange-600'
     }
   ];
@@ -94,31 +98,35 @@ export const DashboardPage: React.FC = () => {
   const recentActivity = [
     {
       id: 1,
-      action: 'Solicitud aprobada',
-      user: 'Juan Pérez',
+      action: 'Tipo de licencia creado',
+      user: 'Sistema',
       time: 'Hace 2 horas',
-      type: 'success'
+      type: 'success',
+      details: 'PG01 - Licencia Personal con Goce'
     },
     {
       id: 2,
-      action: 'Nueva solicitud creada',
-      user: 'María García',
+      action: 'Solicitud aprobada',
+      user: 'Juan Pérez',
       time: 'Hace 4 horas',
-      type: 'info'
+      type: 'success',
+      details: 'Vacaciones anuales - 5 días'
     },
     {
       id: 3,
       action: 'Empleado registrado',
-      user: 'Carlos López',
+      user: 'María García',
       time: 'Hace 6 horas',
-      type: 'success'
+      type: 'info',
+      details: 'Departamento: Recursos Humanos'
     },
     {
       id: 4,
       action: 'Solicitud rechazada',
-      user: 'Ana Martínez',
+      user: 'Carlos López',
       time: 'Hace 1 día',
-      type: 'warning'
+      type: 'warning',
+      details: 'Sin días disponibles'
     }
   ];
 
@@ -211,6 +219,7 @@ export const DashboardPage: React.FC = () => {
                   {quickActions.map((action, index) => (
                     <button
                       key={index}
+                      onClick={action.action}
                       className={`${action.color} text-white rounded-lg p-4 text-left transition-colors`}
                     >
                       <action.icon className="h-6 w-6 mb-2" />
@@ -240,6 +249,7 @@ export const DashboardPage: React.FC = () => {
                         <p className="text-sm font-medium text-gray-900">{activity.action}</p>
                         <p className="text-sm text-gray-500">{activity.user}</p>
                         <p className="text-xs text-gray-400">{activity.time}</p>
+                        <p className="text-xs text-gray-500 mt-1">{activity.details}</p>
                       </div>
                     </div>
                   ))}
