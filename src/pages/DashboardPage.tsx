@@ -72,13 +72,13 @@ export const DashboardPage: React.FC = () => {
       action: () => handleNavigation('/license-types'),
       color: 'bg-purple-500 hover:bg-purple-600'
     },
-               {
-             title: 'Nueva Solicitud',
-             description: 'Crear solicitud de permiso',
-             icon: FileText,
-             action: () => handleNavigation('/requests'),
-             color: 'bg-blue-500 hover:bg-blue-600'
-           },
+                               {
+              title: 'Nueva Solicitud',
+              description: 'Crear solicitud de permiso',
+              icon: FileText,
+              action: () => handleNavigation('/requests/new'),
+              color: 'bg-blue-500 hover:bg-blue-600'
+            },
     {
       title: 'Gestionar Empleados',
       description: 'Ver y editar empleados',
