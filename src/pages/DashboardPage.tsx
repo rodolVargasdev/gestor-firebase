@@ -9,7 +9,8 @@ import {
   Home,
   BarChart3,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,13 +87,20 @@ export const DashboardPage: React.FC = () => {
       action: () => handleNavigation('/employees'),
       color: 'bg-green-500 hover:bg-green-600'
     },
-    {
-      title: 'Reportes',
-      description: 'Ver estadísticas',
-      icon: BarChart3,
-      action: () => handleNavigation('/reports'),
-      color: 'bg-orange-500 hover:bg-orange-600'
-    }
+         {
+       title: 'Disponibilidad',
+       description: 'Ver balance de licencias',
+       icon: Calendar,
+       action: () => handleNavigation('/availability'),
+       color: 'bg-indigo-500 hover:bg-indigo-600'
+     },
+     {
+       title: 'Reportes',
+       description: 'Ver estadísticas',
+       icon: BarChart3,
+       action: () => handleNavigation('/reports'),
+       color: 'bg-orange-500 hover:bg-orange-600'
+     }
   ];
 
   const recentActivity = [
