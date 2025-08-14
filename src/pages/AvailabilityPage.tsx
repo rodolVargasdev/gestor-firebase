@@ -18,8 +18,15 @@ import {
   TrendingUp,
   TrendingDown,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Info
 } from 'lucide-react';
+import { 
+  calculateLicenseBalance, 
+  generateBalanceMessage, 
+  getBalanceStatusColor,
+  LicenseBalance 
+} from '../utils/licenseUtils';
 
 interface Employee {
   id: string;
@@ -60,6 +67,7 @@ interface EmployeeAvailability {
   periodStart: Date;
   periodEnd: Date;
   status: 'available' | 'low' | 'exhausted' | 'pending';
+  balance: LicenseBalance;
 }
 
 // Datos de ejemplo
@@ -87,13 +95,21 @@ const generateSampleAvailability = (): EmployeeAvailability[] => {
   SAMPLE_EMPLOYEES.forEach(employee => {
     SAMPLE_LICENSE_TYPES.forEach(licenseType => {
       // Generar datos aleatorios pero realistas
-      const used = Math.floor(Math.random() * licenseType.totalAvailable);
+      const usedCurrent = Math.floor(Math.random() * licenseType.totalAvailable);
+      const usedPrevious = Math.floor(Math.random() * 3); // Licencias usadas del período anterior
       const pending = Math.floor(Math.random() * 5);
-      const available = Math.max(0, licenseType.totalAvailable - used);
+      
+      // Calcular balance usando las utilidades
+      const balance = calculateLicenseBalance(
+        licenseType.periodControl,
+        licenseType.totalAvailable,
+        usedCurrent,
+        usedPrevious
+      );
       
       let status: 'available' | 'low' | 'exhausted' | 'pending';
-      if (available === 0) status = 'exhausted';
-      else if (available <= licenseType.totalAvailable * 0.2) status = 'low';
+      if (balance.available === 0) status = 'exhausted';
+      else if (balance.available <= licenseType.totalAvailable * 0.2) status = 'low';
       else if (pending > 0) status = 'pending';
       else status = 'available';
       
@@ -105,13 +121,14 @@ const generateSampleAvailability = (): EmployeeAvailability[] => {
         licenseTypeName: licenseType.name,
         licenseTypeCode: licenseType.code,
         totalAvailable: licenseType.totalAvailable,
-        used,
-        available,
+        used: usedCurrent,
+        available: balance.available,
         pending,
         lastUpdated: new Date(),
         periodStart: new Date(new Date().getFullYear(), 0, 1), // 1 de enero del año actual
         periodEnd: new Date(new Date().getFullYear(), 11, 31), // 31 de diciembre del año actual
-        status
+        status,
+        balance
       });
     });
   });
@@ -436,23 +453,43 @@ export const AvailabilityPage: React.FC = () => {
                         </span>
                       </div>
                       
-                      {/* Progress Bar */}
-                      <div className="mb-2">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
-                          <span>Disponible: {item.available}</span>
-                          <span>Usado: {item.used}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${getProgressColor(item.available, item.totalAvailable)}`}
-                            style={{ width: `${(item.available / item.totalAvailable) * 100}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>Total: {item.totalAvailable}</span>
-                          <span>{Math.round((item.available / item.totalAvailable) * 100)}%</span>
-                        </div>
-                      </div>
+                                             {/* Progress Bar */}
+                       <div className="mb-2">
+                         <div className="flex justify-between text-xs text-gray-600 mb-1">
+                           <span>Disponible: {item.available}</span>
+                           <span>Usado: {item.used}</span>
+                         </div>
+                         <div className="w-full bg-gray-200 rounded-full h-2">
+                           <div 
+                             className={`h-2 rounded-full ${getProgressColor(item.available, item.totalAvailable)}`}
+                             style={{ width: `${(item.available / item.totalAvailable) * 100}%` }}
+                           ></div>
+                         </div>
+                         <div className="flex justify-between text-xs text-gray-500 mt-1">
+                           <span>Total: {item.totalAvailable}</span>
+                           <span>{Math.round((item.available / item.totalAvailable) * 100)}%</span>
+                         </div>
+                       </div>
+                       
+                       {/* Balance Details */}
+                       <div className="text-xs text-gray-600">
+                         <div className="flex items-center space-x-1">
+                           <Info className="h-3 w-3" />
+                           <span className={getBalanceStatusColor(item.balance)}>
+                             {generateBalanceMessage(item.balance)}
+                           </span>
+                         </div>
+                         {item.balance.carriedOver > 0 && (
+                           <div className="mt-1 text-blue-600">
+                             <span className="font-medium">Transferido:</span> {item.balance.carriedOver} días
+                             {item.balance.expiresAt && (
+                               <span className="ml-1">
+                                 (vence: {formatDate(item.balance.expiresAt)})
+                               </span>
+                             )}
+                           </div>
+                         )}
+                       </div>
                       
                       {/* Pending Requests */}
                       {item.pending > 0 && (
