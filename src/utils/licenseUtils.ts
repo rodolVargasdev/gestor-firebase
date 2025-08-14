@@ -13,6 +13,9 @@ export interface LicenseBalance {
   used: number;
   available: number;
   carriedOver: number; // Licencias del período anterior
+  accumulated: number; // Licencias acumuladas dentro del período
+  maxCarryOver: number; // Máximo días transferibles
+  maxAccumulation: number; // Máximo días acumulables
   expiresAt?: Date; // Fecha de vencimiento para licencias transferidas
   isExpired: boolean;
 }
@@ -145,25 +148,37 @@ export const calculateLicenseBalance = (
   totalAvailable: number,
   usedCurrentPeriod: number,
   usedPreviousPeriod: number = 0,
+  maxCarryOver: number = 5, // Máximo días transferibles por defecto
+  maxAccumulation: number = 0, // Máximo días acumulables (0 = sin límite)
   referenceDate: Date = new Date()
 ): LicenseBalance => {
-  const currentPeriod = calculateCurrentPeriod(periodControl, referenceDate);
   const previousPeriod = calculatePreviousPeriod(periodControl, referenceDate);
   
   let carriedOver = 0;
+  let accumulated = 0;
   let expiresAt: Date | undefined;
   let isExpired = false;
   
-  // Solo las licencias anuales pueden transferirse
+  // Calcular licencias transferidas del período anterior
   if (periodControl === 'annual') {
     const previousAvailable = Math.max(0, totalAvailable - usedPreviousPeriod);
     
     if (previousAvailable > 0 && isPreviousPeriodLicenseValid(periodControl, previousPeriod.endDate, referenceDate)) {
-      carriedOver = Math.min(previousAvailable, 5); // Máximo 5 días transferibles
+      carriedOver = Math.min(previousAvailable, maxCarryOver);
       expiresAt = new Date(previousPeriod.endDate);
       expiresAt.setMonth(expiresAt.getMonth() + 3);
       isExpired = referenceDate > expiresAt;
     }
+  }
+  
+  // Calcular licencias acumuladas dentro del período actual
+  if (maxAccumulation > 0) {
+    // Si hay límite de acumulación, calcular cuánto se puede acumular
+    const unusedInCurrentPeriod = Math.max(0, totalAvailable - usedCurrentPeriod);
+    accumulated = Math.min(unusedInCurrentPeriod, maxAccumulation);
+  } else {
+    // Sin límite de acumulación
+    accumulated = Math.max(0, totalAvailable - usedCurrentPeriod);
   }
   
   const available = totalAvailable - usedCurrentPeriod + carriedOver;
@@ -173,6 +188,9 @@ export const calculateLicenseBalance = (
     used: usedCurrentPeriod,
     available: Math.max(0, available),
     carriedOver,
+    accumulated,
+    maxCarryOver,
+    maxAccumulation,
     expiresAt,
     isExpired
   };
@@ -271,6 +289,14 @@ export const generateBalanceMessage = (balance: LicenseBalance): string => {
     }
     
     message += ')';
+  }
+  
+  if (balance.accumulated > 0) {
+    message += ` | Acumulado: ${balance.accumulated} días`;
+    
+    if (balance.maxAccumulation > 0) {
+      message += ` (máximo ${balance.maxAccumulation})`;
+    }
   }
   
   return message;

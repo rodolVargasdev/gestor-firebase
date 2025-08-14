@@ -248,7 +248,10 @@ npm run preview               # Preview del build
 ## 📝 Credenciales de Prueba
 
 ### Usuario Administrador
-- **Email**: `prueba@test.test`
+- **Email**: `
+
+
+prueba@test.test`
 - **Password**: `123456`
 - **Rol**: `admin`
 

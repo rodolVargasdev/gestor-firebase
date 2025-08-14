@@ -12,10 +12,8 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  XCircle,
   Building,
   Mail,
-  Phone,
   CalendarDays,
   Clock as ClockIcon
 } from 'lucide-react';

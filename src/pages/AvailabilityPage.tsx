@@ -12,7 +12,6 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Building,
   Search,
   Filter,
   TrendingUp,
@@ -25,7 +24,7 @@ import {
   calculateLicenseBalance, 
   generateBalanceMessage, 
   getBalanceStatusColor,
-  LicenseBalance 
+  type LicenseBalance 
 } from '../utils/licenseUtils';
 
 interface Employee {
@@ -99,13 +98,15 @@ const generateSampleAvailability = (): EmployeeAvailability[] => {
       const usedPrevious = Math.floor(Math.random() * 3); // Licencias usadas del período anterior
       const pending = Math.floor(Math.random() * 5);
       
-      // Calcular balance usando las utilidades
-      const balance = calculateLicenseBalance(
-        licenseType.periodControl,
-        licenseType.totalAvailable,
-        usedCurrent,
-        usedPrevious
-      );
+             // Calcular balance usando las utilidades
+       const balance = calculateLicenseBalance(
+         licenseType.periodControl,
+         licenseType.totalAvailable,
+         usedCurrent,
+         usedPrevious,
+         5, // maxCarryOver: máximo 5 días transferibles
+         0  // maxAccumulation: 0 = sin límite de acumulación
+       );
       
       let status: 'available' | 'low' | 'exhausted' | 'pending';
       if (balance.available === 0) status = 'exhausted';
@@ -479,16 +480,26 @@ export const AvailabilityPage: React.FC = () => {
                              {generateBalanceMessage(item.balance)}
                            </span>
                          </div>
-                         {item.balance.carriedOver > 0 && (
-                           <div className="mt-1 text-blue-600">
-                             <span className="font-medium">Transferido:</span> {item.balance.carriedOver} días
-                             {item.balance.expiresAt && (
-                               <span className="ml-1">
-                                 (vence: {formatDate(item.balance.expiresAt)})
-                               </span>
-                             )}
-                           </div>
-                         )}
+                                                   {item.balance.carriedOver > 0 && (
+                            <div className="mt-1 text-blue-600">
+                              <span className="font-medium">Transferido:</span> {item.balance.carriedOver} días
+                              {item.balance.expiresAt && (
+                                <span className="ml-1">
+                                  (vence: {formatDate(item.balance.expiresAt)})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {item.balance.accumulated > 0 && (
+                            <div className="mt-1 text-green-600">
+                              <span className="font-medium">Acumulado:</span> {item.balance.accumulated} días
+                              {item.balance.maxAccumulation > 0 && (
+                                <span className="ml-1">
+                                  (máximo {item.balance.maxAccumulation})
+                                </span>
+                              )}
+                            </div>
+                          )}
                        </div>
                       
                       {/* Pending Requests */}

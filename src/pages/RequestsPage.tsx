@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { 
   ArrowLeft, 
@@ -9,16 +9,12 @@ import {
   Trash2, 
   Eye, 
   FileText,
-  Calendar,
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Filter,
   Search,
   Plus,
-  User,
-  Building,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -180,15 +176,7 @@ export const RequestsPage: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus, filterDepartment, filterPriority]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'cancelled': return <AlertCircle className="h-4 w-4 text-gray-600" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
-  };
+
 
   const getStatusLabel = (status: string) => {
     switch (status) {
