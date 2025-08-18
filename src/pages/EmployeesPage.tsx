@@ -29,8 +29,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useEmployeeStore } from '../stores/employeeStore';
-import { useLicenseStore } from '../stores/licenseStore';
-import { EmployeeService } from '../services/employeeService';
+
+
 
 
 
@@ -65,7 +65,7 @@ export const EmployeesPage: React.FC = () => {
 
   // Obtener datos del store de Firebase
   const { employees, loading, loadEmployees, deleteEmployee, importEmployees } = useEmployeeStore();
-  const { initializeEmployeeAvailability } = useLicenseStore();
+
 
   // Cargar datos reales de Firebase
   useEffect(() => {
