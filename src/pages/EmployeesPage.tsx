@@ -188,6 +188,8 @@ export const EmployeesPage: React.FC = () => {
 
   const handleImportEmployees = async (importedEmployees: any[]) => {
     try {
+      console.log(`🔄 Iniciando importación de ${importedEmployees.length} empleados...`);
+      
       // Mapear los datos importados al formato correcto
       const mappedEmployees = importedEmployees.map(emp => ({
         employeeId: emp.employeeId,
@@ -213,34 +215,17 @@ export const EmployeesPage: React.FC = () => {
       }));
 
       const result = await importEmployees(mappedEmployees);
-      console.log(`Importación completada: ${result.success} exitosos, ${result.failed} fallidos`);
+      console.log(`📊 Importación completada: ${result.success} exitosos, ${result.failed} fallidos`);
       
-      // ✅ INICIALIZAR DISPONIBILIDAD PARA CADA EMPLEADO IMPORTADO
+      // ✅ LA DISPONIBILIDAD SE INICIALIZA AUTOMÁTICAMENTE EN createEmployee
+      // No necesitamos inicialización adicional porque ya está integrada
       if (result.success > 0) {
-        console.log('🔄 Inicializando disponibilidad para empleados importados...');
-        
-        // Obtener todos los empleados para encontrar los recién creados
-        const allEmployees = await EmployeeService.getAllEmployees();
-        
-        // Filtrar empleados recién creados (últimos N empleados)
-        const recentEmployees = allEmployees.slice(-result.success);
-        
-        // Inicializar disponibilidad para cada uno
-        for (const employee of recentEmployees) {
-          try {
-            await initializeEmployeeAvailability(employee.id);
-            console.log(`✅ Disponibilidad inicializada para: ${employee.firstName} ${employee.lastName}`);
-          } catch (error) {
-            console.error(`❌ Error inicializando disponibilidad para ${employee.firstName} ${employee.lastName}:`, error);
-          }
-        }
-        
-        console.log('✅ Proceso de inicialización de disponibilidad completado');
+        console.log('✅ Disponibilidad inicializada automáticamente para todos los empleados importados');
       }
       
       return result;
     } catch (error) {
-      console.error('Error en la importación:', error);
+      console.error('❌ Error en la importación:', error);
       throw error;
     }
   };
