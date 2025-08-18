@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { ImportEmployeesModal } from '../components/employees/ImportEmployeesModal';
+import { ExportEmployeesModal } from '../components/employees/ExportEmployeesModal';
 import { 
   ArrowLeft, 
   Edit, 
@@ -20,82 +22,19 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Upload,
+  Download,
+  Plus,
+  BarChart3
 } from 'lucide-react';
+import { useEmployeeStore } from '../stores/employeeStore';
+import { useLicenseStore } from '../stores/licenseStore';
+import { EmployeeService } from '../services/employeeService';
 
-interface Employee {
-  id: string;
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  position: string;
-  department: string;
-  hireDate: Date;
-  salary: number;
-  status: 'active' | 'inactive' | 'on_leave';
-  gender: 'male' | 'female' | 'other';
-  birthDate: Date;
-  address: string;
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
 
-// Datos de ejemplo para empleados (simulando 5000+ empleados)
-const generateSampleEmployees = (count: number): Employee[] => {
-  const departments = ['Tecnología', 'Recursos Humanos', 'Finanzas', 'Ventas', 'Marketing', 'Operaciones', 'Legal', 'Administración'];
-  const positions = [
-    'Desarrollador Senior', 'Analista de RH', 'Contador', 'Gerente de Ventas', 'Diseñador UX/UI',
-    'Desarrollador Junior', 'Asistente de RH', 'Auxiliar Contable', 'Vendedor', 'Marketing Manager',
-    'DevOps Engineer', 'Recruiter', 'Auditor', 'Sales Representative', 'Content Creator',
-    'QA Engineer', 'HR Specialist', 'Financial Analyst', 'Account Manager', 'SEO Specialist'
-  ];
-  const statuses: ('active' | 'inactive' | 'on_leave')[] = ['active', 'active', 'active', 'active', 'on_leave'];
-  const genders: ('male' | 'female' | 'other')[] = ['male', 'female', 'other'];
 
-  return Array.from({ length: count }, (_, index) => {
-    const employeeId = `EMP${String(index + 1).padStart(4, '0')}`;
-    const firstName = `Empleado${index + 1}`;
-    const lastName = `Apellido${index + 1}`;
-    const department = departments[Math.floor(Math.random() * departments.length)];
-    const position = positions[Math.floor(Math.random() * positions.length)];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const gender = genders[Math.floor(Math.random() * genders.length)];
-    
-    return {
-      id: String(index + 1),
-      employeeId,
-      firstName,
-      lastName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@empresa.com`,
-      phone: `+502 ${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      position,
-      department,
-      hireDate: new Date(2020 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-      salary: Math.floor(Math.random() * 8000) + 3000,
-      status,
-      gender,
-      birthDate: new Date(1980 + Math.floor(Math.random() * 30), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-      address: `Zona ${Math.floor(Math.random() * 20) + 1}, Ciudad de Guatemala`,
-      emergencyContact: {
-        name: `Contacto${index + 1}`,
-        phone: `+502 ${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        relationship: ['Esposo', 'Esposa', 'Padre', 'Madre', 'Hermano', 'Hermana'][Math.floor(Math.random() * 6)]
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  });
-};
 
-// Generar 5000 empleados de ejemplo
-const SAMPLE_EMPLOYEES: Employee[] = generateSampleEmployees(5000);
 
 // Departamentos de ejemplo
 const DEPARTMENTS = [
@@ -111,25 +50,35 @@ const DEPARTMENTS = [
 
 export const EmployeesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [employeesPerPage] = useState(12);
+  const [employeesPerPage, setEmployeesPerPage] = useState(50);
+  const [showAll, setShowAll] = useState(false);
 
-  // Simular carga de datos
+  // Estado para los modales
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  // Obtener datos del store de Firebase
+  const { employees, loading, loadEmployees, deleteEmployee, importEmployees } = useEmployeeStore();
+  const { initializeEmployeeAvailability } = useLicenseStore();
+
+  // Cargar datos reales de Firebase
   useEffect(() => {
-    const loadEmployees = () => {
-      setEmployees(SAMPLE_EMPLOYEES);
-      setLoading(false);
+    const loadData = async () => {
+      try {
+        await loadEmployees();
+      } catch (error) {
+        console.error('Error cargando empleados:', error);
+      }
     };
 
-    setTimeout(loadEmployees, 1000); // Simular delay de carga
-  }, []);
+    loadData();
+  }, [loadEmployees]);
 
   const filteredEmployees = employees.filter(employee => {
     const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
@@ -143,21 +92,23 @@ export const EmployeesPage: React.FC = () => {
                          position.includes(searchTerm.toLowerCase());
     
     const matchesDepartment = filterDepartment === 'all' || employee.department === filterDepartment;
-    const matchesStatus = filterStatus === 'all' || employee.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'active' && employee.isActive) || 
+      (filterStatus === 'inactive' && !employee.isActive);
 
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
   // Calcular paginación
-  const indexOfLastEmployee = currentPage * employeesPerPage;
-  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
-  const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
+  const indexOfLastEmployee = showAll ? filteredEmployees.length : currentPage * employeesPerPage;
+  const indexOfFirstEmployee = showAll ? 0 : indexOfLastEmployee - employeesPerPage;
+  const currentEmployees = showAll ? filteredEmployees : filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+  const totalPages = showAll ? 1 : Math.ceil(filteredEmployees.length / employeesPerPage);
 
   // Resetear página cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterDepartment, filterStatus]);
+  }, [searchTerm, filterDepartment, filterStatus, employeesPerPage, showAll]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -198,6 +149,15 @@ export const EmployeesPage: React.FC = () => {
     navigate('/employees/new');
   };
 
+
+
+  const getExistingEmployeesForValidation = () => {
+    return employees.map(emp => ({
+      employeeId: emp.employeeId,
+      email: emp.email
+    }));
+  };
+
   const handleEdit = (id: string) => {
     navigate(`/employees/edit/${id}`);
   };
@@ -206,9 +166,82 @@ export const EmployeesPage: React.FC = () => {
     navigate(`/employees/view/${id}`);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este empleado?')) {
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
+      try {
+        await deleteEmployee(id);
+        alert('Empleado eliminado exitosamente');
+      } catch (error) {
+        console.error('Error eliminando empleado:', error);
+        alert('Error al eliminar empleado. Por favor, inténtalo de nuevo.');
+      }
+    }
+  };
+
+  const handleNewLicense = (employeeId: string) => {
+    navigate(`/employees/${employeeId}/new-license`);
+  };
+
+  const handleViewAvailability = (employeeId: string) => {
+    navigate(`/employees/${employeeId}/availability`);
+  };
+
+  const handleImportEmployees = async (importedEmployees: any[]) => {
+    try {
+      // Mapear los datos importados al formato correcto
+      const mappedEmployees = importedEmployees.map(emp => ({
+        employeeId: emp.employeeId,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        email: emp.email,
+        phone: '',
+        position: emp.position,
+        department: emp.department,
+        employeeType: emp.employeeType,
+        hireDate: new Date(emp.hireDate),
+        salary: 0,
+        gender: emp.gender,
+        birthDate: new Date(),
+        address: '',
+        personalType: 'full-time' as const,
+        emergencyContact: {
+          name: '',
+          phone: '',
+          relationship: ''
+        },
+        isActive: true
+      }));
+
+      const result = await importEmployees(mappedEmployees);
+      console.log(`Importación completada: ${result.success} exitosos, ${result.failed} fallidos`);
+      
+      // ✅ INICIALIZAR DISPONIBILIDAD PARA CADA EMPLEADO IMPORTADO
+      if (result.success > 0) {
+        console.log('🔄 Inicializando disponibilidad para empleados importados...');
+        
+        // Obtener todos los empleados para encontrar los recién creados
+        const allEmployees = await EmployeeService.getAllEmployees();
+        
+        // Filtrar empleados recién creados (últimos N empleados)
+        const recentEmployees = allEmployees.slice(-result.success);
+        
+        // Inicializar disponibilidad para cada uno
+        for (const employee of recentEmployees) {
+          try {
+            await initializeEmployeeAvailability(employee.id);
+            console.log(`✅ Disponibilidad inicializada para: ${employee.firstName} ${employee.lastName}`);
+          } catch (error) {
+            console.error(`❌ Error inicializando disponibilidad para ${employee.firstName} ${employee.lastName}:`, error);
+          }
+        }
+        
+        console.log('✅ Proceso de inicialización de disponibilidad completado');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error en la importación:', error);
+      throw error;
     }
   };
 
@@ -337,13 +370,31 @@ export const EmployeesPage: React.FC = () => {
                 </h1>
               </div>
             </div>
-            <Button
-              onClick={handleCreateNew}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Nuevo Empleado
-            </Button>
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center space-x-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Importar</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowExportModal(true)}
+                className="flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Exportar</span>
+              </Button>
+              <Button
+                onClick={() => navigate('/employees/new')}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nuevo Empleado
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -372,7 +423,7 @@ export const EmployeesPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {employees.filter(e => e.status === 'active').length.toLocaleString()}
+                  {employees.filter(e => e.isActive).length.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Empleados activos
@@ -386,7 +437,7 @@ export const EmployeesPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-yellow-600">
-                  {employees.filter(e => e.status === 'on_leave').length.toLocaleString()}
+                  {employees.filter(e => !e.isActive).length.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   En permiso temporal
@@ -473,8 +524,35 @@ export const EmployeesPage: React.FC = () => {
             <div className="text-sm text-gray-600">
               Mostrando {indexOfFirstEmployee + 1} a {Math.min(indexOfLastEmployee, filteredEmployees.length)} de {filteredEmployees.length.toLocaleString()} empleados
             </div>
-            <div className="text-sm text-gray-600">
-              Página {currentPage} de {totalPages}
+            <div className="flex items-center space-x-4">
+              {/* Controles de paginación */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-600">Mostrar:</label>
+                <select
+                  value={showAll ? 'all' : employeesPerPage.toString()}
+                  onChange={(e) => {
+                    if (e.target.value === 'all') {
+                      setShowAll(true);
+                      setCurrentPage(1);
+                    } else {
+                      setShowAll(false);
+                      setEmployeesPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value="50">50 por página</option>
+                  <option value="100">100 por página</option>
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+              
+              {!showAll && (
+                <div className="text-sm text-gray-600">
+                  Página {currentPage} de {totalPages}
+                </div>
+              )}
             </div>
           </div>
 
@@ -489,8 +567,8 @@ export const EmployeesPage: React.FC = () => {
                         <Badge variant="outline" className="text-blue-600 border-blue-600">
                           {employee.employeeId}
                         </Badge>
-                        <Badge variant={getStatusBadgeVariant(employee.status)}>
-                          {getStatusLabel(employee.status)}
+                        <Badge variant={getStatusBadgeVariant(employee.isActive ? 'active' : 'inactive')}>
+                          {getStatusLabel(employee.isActive ? 'active' : 'inactive')}
                         </Badge>
                       </div>
                       <CardTitle className="text-lg">
@@ -526,13 +604,33 @@ export const EmployeesPage: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleView(employee.id)}
+                        title="Ver detalles del empleado"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleNewLicense(employee.id)}
+                        title="Crear nueva licencia"
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewAvailability(employee.id)}
+                        title="Ver disponibilidad de licencias"
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEdit(employee.id)}
+                        title="Editar empleado"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -541,12 +639,13 @@ export const EmployeesPage: React.FC = () => {
                         size="sm"
                         onClick={() => handleDelete(employee.id)}
                         className="text-red-600 hover:text-red-700"
+                        title="Eliminar empleado"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                     <div className="text-xs text-gray-500">
-                      {getStatusIcon(employee.status)}
+                      {getStatusIcon(employee.isActive ? 'active' : 'inactive')}
                     </div>
                   </div>
                 </CardContent>
@@ -555,7 +654,7 @@ export const EmployeesPage: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {!showAll && totalPages > 1 && (
             <div className="flex justify-center items-center space-x-2 mb-8">
               {renderPaginationButtons()}
             </div>
@@ -580,6 +679,22 @@ export const EmployeesPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Modal de Importación */}
+      <ImportEmployeesModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportEmployees}
+        existingEmployees={getExistingEmployeesForValidation()}
+      />
+
+      {/* Modal de Exportación */}
+      <ExportEmployeesModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        employees={employees}
+        departments={DEPARTMENTS}
+      />
     </div>
   );
 };

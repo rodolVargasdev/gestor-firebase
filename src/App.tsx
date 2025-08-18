@@ -1,291 +1,140 @@
 
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from './stores/authStore';
+import { AuthService } from './services/authService';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { LicenseTypesPage } from './pages/LicenseTypesPage';
+
 import { EmployeesPage } from './pages/EmployeesPage';
-import { RequestsPage } from './pages/RequestsPage';
-import { NewRequestPage } from './pages/NewRequestPage';
-import { AvailabilityPage } from './pages/AvailabilityPage';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { AuthService } from './services/authService';
-import { useAuthStore } from './stores/authStore';
-import './index.css';
+import { NewEmployeePage } from './pages/NewEmployeePage';
+import { EditEmployeePage } from './pages/EditEmployeePage';
+import { ViewEmployeePage } from './pages/ViewEmployeePage';
+import { EmployeeAvailabilityPage } from './pages/EmployeeAvailabilityPage';
+import { NewLicensePage } from './pages/NewLicensePage';
+import { LicenseHistoryPage } from './pages/LicenseHistoryPage';
+import { ViewLicensePage } from './pages/ViewLicensePage';
+import { EditLicensePage } from './pages/EditLicensePage';
+
+
 
 function App() {
   const { setUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    // Configurar el listener de cambios de autenticación
     const unsubscribe = AuthService.onAuthStateChanged((user) => {
       setUser(user);
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, [setUser, setLoading]);
 
   return (
     <Router>
       <div className="App">
+
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <DashboardPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/license-types" 
-            element={
-              <ProtectedRoute>
-                <LicenseTypesPage />
-              </ProtectedRoute>
-            } 
+          <Route
+            path="/dashboard"
+            element={<Navigate to="/" replace />}
           />
-          <Route 
-            path="/license-types/new" 
-            element={
-              <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Crear Nuevo Tipo de Licencia
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/license-types/edit/:id" 
-            element={
-              <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Editar Tipo de Licencia
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/license-types/view/:id" 
-            element={
-              <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Ver Tipo de Licencia
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/employees" 
+
+
+          <Route
+            path="/employees"
             element={
               <ProtectedRoute>
                 <EmployeesPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/employees/new" 
+          <Route
+            path="/employees/new"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Crear Nuevo Empleado
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
+                <NewEmployeePage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/employees/edit/:id" 
+          <Route
+            path="/employees/edit/:id"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Editar Empleado
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
+                <EditEmployeePage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/employees/view/:id" 
+          <Route
+            path="/employees/view/:id"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Ver Empleado
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Esta funcionalidad estará disponible en la siguiente iteración.
-                    </p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      Volver
-                    </button>
-                  </div>
+                <ViewEmployeePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees/:employeeId/availability"
+            element={
+              <ProtectedRoute>
+                <EmployeeAvailabilityPage />
+              </ProtectedRoute>
+            }
+          />
+                 <Route
+         path="/employees/:employeeId/new-license"
+         element={
+           <ProtectedRoute>
+             <NewLicensePage />
+           </ProtectedRoute>
+         }
+       />
+                  <Route
+          path="/employees/:employeeId/license-history"
+          element={
+            <ProtectedRoute>
+              <LicenseHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employees/:employeeId/view-license/:requestId"
+          element={
+            <ProtectedRoute>
+              <ViewLicensePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employees/:employeeId/edit-license/:requestId"
+          element={
+            <ProtectedRoute>
+              <EditLicensePage />
+            </ProtectedRoute>
+          }
+        />
+
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <div className="p-8">
+                  <h1 className="text-2xl font-bold">Reportes</h1>
+                  <p className="text-gray-600">Sistema de reportes y analytics (Fase 5)</p>
                 </div>
               </ProtectedRoute>
-            } 
+            }
           />
-                           <Route
-                   path="/requests"
-                   element={
-                     <ProtectedRoute>
-                       <RequestsPage />
-                     </ProtectedRoute>
-                   }
-                 />
-                 <Route
-                   path="/requests/new"
-                   element={
-                     <ProtectedRoute>
-                       <NewRequestPage />
-                     </ProtectedRoute>
-                   }
-                 />
-                 <Route
-                   path="/requests/edit/:id"
-                   element={
-                     <ProtectedRoute>
-                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                         <div className="text-center">
-                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                             Editar Solicitud
-                           </h2>
-                           <p className="text-gray-600 mb-4">
-                             Esta funcionalidad estará disponible en la siguiente iteración.
-                           </p>
-                           <button
-                             onClick={() => window.history.back()}
-                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                           >
-                             Volver
-                           </button>
-                         </div>
-                       </div>
-                     </ProtectedRoute>
-                   }
-                 />
-                 <Route
-                   path="/requests/view/:id"
-                   element={
-                     <ProtectedRoute>
-                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                         <div className="text-center">
-                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                             Ver Solicitud
-                           </h2>
-                           <p className="text-gray-600 mb-4">
-                             Esta funcionalidad estará disponible en la siguiente iteración.
-                           </p>
-                           <button
-                             onClick={() => window.history.back()}
-                             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                           >
-                             Volver
-                           </button>
-                         </div>
-                       </div>
-                     </ProtectedRoute>
-                   }
-                 />
-                           <Route
-                   path="/availability"
-                   element={
-                     <ProtectedRoute>
-                       <AvailabilityPage />
-                     </ProtectedRoute>
-                   }
-                 />
-                 <Route
-                   path="/reports"
-                   element={
-                     <ProtectedRoute>
-                       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                         <div className="text-center">
-                           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                             Reportes y Analytics
-                           </h2>
-                           <p className="text-gray-600 mb-4">
-                             Esta funcionalidad estará disponible en la Fase 5.
-                           </p>
-                           <button
-                             onClick={() => window.history.back()}
-                             className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                           >
-                             Volver
-                           </button>
-                         </div>
-                       </div>
-                     </ProtectedRoute>
-                   }
-                 />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </Router>

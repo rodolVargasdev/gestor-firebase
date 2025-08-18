@@ -1,298 +1,414 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { type LicenseType, type SearchFilters, type SortOptions } from '../types';
+import { type LicenseType } from '../types/licenseTypes';
+import { type Employee, type LicenseRequest, type CreateLicenseRequestData } from '../types/index';
 import { LicenseService } from '../services/licenseService';
 
+// ========================================
+// TIPOS DE ESTADO
+// ========================================
+
 interface LicenseState {
-  // Estado de los datos
+  // Tipos de licencias
   licenseTypes: LicenseType[];
   currentLicenseType: LicenseType | null;
+  
+  // Disponibilidad
+  employeeAvailability: Employee['disponibilidad'] | null;
+  
+  // Solicitudes de licencias
+  licenseRequests: LicenseRequest[];
+  
+  // Estado de carga
   loading: boolean;
   error: string | null;
   
-  // Estado de paginación
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-  
-  // Estado de filtros y búsqueda
-  filters: SearchFilters;
-  sortOptions: SortOptions;
-  
-  // Estado de formularios
-  isFormOpen: boolean;
-  isEditing: boolean;
+  // Estado de UI
+  isInitializing: boolean;
+  isRenewing: boolean;
+  isCreatingRequest: boolean;
 }
 
 interface LicenseActions {
-  // Acciones de carga de datos
-  loadLicenseTypes: (page?: number, filters?: SearchFilters, sort?: SortOptions) => Promise<void>;
-  loadLicenseTypeById: (id: string) => Promise<void>;
-  refreshLicenseTypes: () => Promise<void>;
+  // ========================================
+  // GESTIÓN DE TIPOS DE LICENCIAS
+  // ========================================
   
-  // Acciones CRUD
-  createLicenseType: (licenseTypeData: Omit<LicenseType, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateLicenseType: (id: string, updates: Partial<Omit<LicenseType, 'id' | 'createdAt'>>) => Promise<void>;
-  deleteLicenseType: (id: string) => Promise<void>;
+  // Inicializar tipos de licencias
+  initializeLicenseTypes: () => Promise<void>;
   
-  // Acciones de búsqueda
-  searchLicenseTypes: (searchTerm: string) => Promise<void>;
-  getActiveLicenseTypes: () => Promise<void>;
-  getLicenseTypesByCategory: (category: string) => Promise<void>;
+  // Cargar tipos de licencias
+  loadLicenseTypes: () => Promise<void>;
   
-  // Acciones de UI
+  // Cargar tipos por categoría
+  loadLicenseTypesByCategory: (categoria: 'HORAS' | 'DIAS' | 'OCASION') => Promise<void>;
+  
+  // Establecer tipo de licencia actual
   setCurrentLicenseType: (licenseType: LicenseType | null) => void;
-  openForm: (licenseType?: LicenseType) => void;
-  closeForm: () => void;
-  setFilters: (filters: SearchFilters) => void;
-  setSortOptions: (sort: SortOptions) => void;
-  setPage: (page: number) => void;
   
-  // Acciones de estado
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  // ========================================
+  // GESTIÓN DE DISPONIBILIDAD
+  // ========================================
+  
+  // Inicializar disponibilidad de empleado
+  initializeEmployeeAvailability: (employeeId: string) => Promise<void>;
+  
+  // Cargar disponibilidad de empleado
+  loadEmployeeAvailability: (employeeId: string) => Promise<void>;
+  
+  // Renovar disponibilidad anual
+  renewAnnualAvailability: (employeeId: string) => Promise<void>;
+  
+  // Renovar disponibilidad mensual
+  renewMonthlyAvailability: (employeeId: string) => Promise<void>;
+  
+  // ========================================
+  // GESTIÓN DE SOLICITUDES DE LICENCIAS
+  // ========================================
+  
+  // Crear solicitud de licencia
+  createLicenseRequest: (data: CreateLicenseRequestData) => Promise<void>;
+  
+  // Cargar solicitudes de empleado
+  loadEmployeeLicenseRequests: (employeeId: string) => Promise<void>;
+  
+  // Actualizar solicitud
+  updateLicenseRequest: (requestId: string, updates: Partial<LicenseRequest>) => Promise<void>;
+  
+  // Eliminar solicitud
+  deleteLicenseRequest: (requestId: string) => Promise<void>;
+  
+  // ========================================
+  // UTILIDADES
+  // ========================================
+  
+  // Limpiar estado
+  clearState: () => void;
+  
+  // Limpiar error
   clearError: () => void;
 }
 
 type LicenseStore = LicenseState & LicenseActions;
 
+// ========================================
+// ESTADO INICIAL
+// ========================================
+
 const initialState: LicenseState = {
   licenseTypes: [],
   currentLicenseType: null,
+  employeeAvailability: null,
+  licenseRequests: [],
   loading: false,
   error: null,
-  currentPage: 1,
-  totalPages: 0,
-  totalItems: 0,
-  pageSize: 10,
-  filters: {},
-  sortOptions: { field: 'createdAt', direction: 'desc' },
-  isFormOpen: false,
-  isEditing: false,
+  isInitializing: false,
+  isRenewing: false,
+  isCreatingRequest: false,
 };
+
+// ========================================
+// STORE PRINCIPAL
+// ========================================
 
 export const useLicenseStore = create<LicenseStore>()(
   persist(
     (set, get) => ({
       ...initialState,
 
-      // Acciones de carga de datos
-      loadLicenseTypes: async (page = 1, filters = get().filters, sort = get().sortOptions) => {
+      // ========================================
+      // GESTIÓN DE TIPOS DE LICENCIAS
+      // ========================================
+
+      initializeLicenseTypes: async () => {
         try {
-          set({ loading: true, error: null });
+          set({ isInitializing: true, error: null });
+          console.log('🚀 Inicializando tipos de licencias desde el store...');
           
-          const response = await LicenseService.getLicenseTypes(
-            page,
-            get().pageSize,
-            filters,
-            sort
-          );
+          await LicenseService.initializeLicenseTypes();
           
+          // Recargar tipos después de inicializar
+          await get().loadLicenseTypes();
+          
+          set({ isInitializing: false });
+          console.log('✅ Tipos de licencias inicializados desde el store');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           set({
-            licenseTypes: response.data,
-            currentPage: response.page,
-            totalPages: response.totalPages,
-            totalItems: response.total,
-            loading: false,
+            error: errorMessage || 'Error al inicializar tipos de licencias',
+            isInitializing: false,
           });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al cargar tipos de licencias',
-            loading: false,
-          });
+          console.error('❌ Error en initializeLicenseTypes:', error);
         }
       },
 
-      loadLicenseTypeById: async (id: string) => {
+      loadLicenseTypes: async () => {
         try {
           set({ loading: true, error: null });
+          console.log('📋 Cargando tipos de licencias...');
           
-          const licenseType = await LicenseService.getLicenseTypeById(id);
+          const licenseTypes = await LicenseService.getActiveLicenseTypes();
           
           set({
-            currentLicenseType: licenseType,
+            licenseTypes,
             loading: false,
           });
-        } catch (error: any) {
+          
+          console.log(`✅ ${licenseTypes.length} tipos de licencias cargados`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           set({
-            error: error.message || 'Error al cargar tipo de licencia',
+            error: errorMessage || 'Error al cargar tipos de licencias',
             loading: false,
           });
+          console.error('❌ Error en loadLicenseTypes:', error);
         }
       },
 
-      refreshLicenseTypes: async () => {
-        await get().loadLicenseTypes(get().currentPage);
-      },
-
-      // Acciones CRUD
-      createLicenseType: async (licenseTypeData) => {
+      loadLicenseTypesByCategory: async (categoria: 'HORAS' | 'DIAS' | 'OCASION') => {
         try {
           set({ loading: true, error: null });
+          console.log(`📋 Cargando tipos de licencias por categoría: ${categoria}`);
           
-          await LicenseService.createLicenseType(licenseTypeData);
-          
-          // Recargar la lista
-          await get().loadLicenseTypes(get().currentPage);
+          const licenseTypes = await LicenseService.getLicenseTypesByCategory(categoria);
           
           set({
+            licenseTypes,
             loading: false,
-            isFormOpen: false,
-            isEditing: false,
           });
-        } catch (error: any) {
+          
+          console.log(`✅ ${licenseTypes.length} tipos de licencias de categoría ${categoria} cargados`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           set({
-            error: error.message || 'Error al crear tipo de licencia',
+            error: errorMessage || 'Error al cargar tipos de licencias por categoría',
             loading: false,
           });
+          console.error('❌ Error en loadLicenseTypesByCategory:', error);
         }
       },
 
-      updateLicenseType: async (id: string, updates) => {
-        try {
-          set({ loading: true, error: null });
-          
-          await LicenseService.updateLicenseType(id, updates);
-          
-          // Recargar la lista y el elemento actual
-          await Promise.all([
-            get().loadLicenseTypes(get().currentPage),
-            get().loadLicenseTypeById(id),
-          ]);
-          
-          set({
-            loading: false,
-            isFormOpen: false,
-            isEditing: false,
-          });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al actualizar tipo de licencia',
-            loading: false,
-          });
-        }
-      },
-
-      deleteLicenseType: async (id: string) => {
-        try {
-          set({ loading: true, error: null });
-          
-          await LicenseService.deleteLicenseType(id);
-          
-          // Recargar la lista
-          await get().loadLicenseTypes(get().currentPage);
-          
-          set({
-            loading: false,
-            currentLicenseType: null,
-          });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al eliminar tipo de licencia',
-            loading: false,
-          });
-        }
-      },
-
-      // Acciones de búsqueda
-      searchLicenseTypes: async (searchTerm: string) => {
-        try {
-          set({ loading: true, error: null });
-          
-          const results = await LicenseService.searchLicenseTypes(searchTerm);
-          
-          set({
-            licenseTypes: results,
-            loading: false,
-          });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al buscar tipos de licencias',
-            loading: false,
-          });
-        }
-      },
-
-      getActiveLicenseTypes: async () => {
-        try {
-          set({ loading: true, error: null });
-          
-          const results = await LicenseService.getActiveLicenseTypes();
-          
-          set({
-            licenseTypes: results,
-            loading: false,
-          });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al obtener tipos de licencias activos',
-            loading: false,
-          });
-        }
-      },
-
-      getLicenseTypesByCategory: async (category: string) => {
-        try {
-          set({ loading: true, error: null });
-          
-          const results = await LicenseService.getLicenseTypesByCategory(category);
-          
-          set({
-            licenseTypes: results,
-            loading: false,
-          });
-        } catch (error: any) {
-          set({
-            error: error.message || 'Error al obtener tipos de licencias por categoría',
-            loading: false,
-          });
-        }
-      },
-
-      // Acciones de UI
-      setCurrentLicenseType: (licenseType) => {
+      setCurrentLicenseType: (licenseType: LicenseType | null) => {
         set({ currentLicenseType: licenseType });
       },
 
-      openForm: (licenseType) => {
-        set({
-          isFormOpen: true,
-          isEditing: !!licenseType,
-          currentLicenseType: licenseType || null,
-        });
+      // ========================================
+      // GESTIÓN DE DISPONIBILIDAD
+      // ========================================
+
+      initializeEmployeeAvailability: async (employeeId: string) => {
+        try {
+          set({ loading: true, error: null });
+          console.log(`🔄 Inicializando disponibilidad para empleado: ${employeeId}`);
+          
+          await LicenseService.initializeEmployeeAvailability(employeeId);
+          
+          // Cargar disponibilidad después de inicializar
+          await get().loadEmployeeAvailability(employeeId);
+          
+          set({ loading: false });
+          console.log(`✅ Disponibilidad inicializada para empleado: ${employeeId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al inicializar disponibilidad del empleado',
+            loading: false,
+          });
+          console.error('❌ Error en initializeEmployeeAvailability:', error);
+        }
       },
 
-      closeForm: () => {
-        set({
-          isFormOpen: false,
-          isEditing: false,
-          currentLicenseType: null,
-        });
+      loadEmployeeAvailability: async (employeeId: string) => {
+        try {
+          set({ loading: true, error: null });
+          console.log(`📊 Cargando disponibilidad para empleado: ${employeeId}`);
+          
+          const availability = await LicenseService.getEmployeeAvailability(employeeId);
+          
+          set({
+            employeeAvailability: availability,
+            loading: false,
+          });
+          
+          if (availability) {
+            console.log(`✅ Disponibilidad cargada para empleado: ${employeeId}`);
+          } else {
+            console.log(`⚠️ No se encontró disponibilidad para empleado: ${employeeId}`);
+          }
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al cargar disponibilidad del empleado',
+            loading: false,
+          });
+          console.error('❌ Error en loadEmployeeAvailability:', error);
+        }
       },
 
-      setFilters: (filters) => {
-        set({ filters, currentPage: 1 });
-        get().loadLicenseTypes(1, filters);
+      renewAnnualAvailability: async (employeeId: string) => {
+        try {
+          set({ isRenewing: true, error: null });
+          console.log(`🔄 Renovando disponibilidad anual para empleado: ${employeeId}`);
+          
+          await LicenseService.renewAnnualAvailability(employeeId);
+          
+          // Recargar disponibilidad después de renovar
+          await get().loadEmployeeAvailability(employeeId);
+          
+          set({ isRenewing: false });
+          console.log(`✅ Disponibilidad anual renovada para empleado: ${employeeId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al renovar disponibilidad anual',
+            isRenewing: false,
+          });
+          console.error('❌ Error en renewAnnualAvailability:', error);
+        }
       },
 
-      setSortOptions: (sort) => {
-        set({ sortOptions: sort });
-        get().loadLicenseTypes(1, get().filters, sort);
+      renewMonthlyAvailability: async (employeeId: string) => {
+        try {
+          set({ isRenewing: true, error: null });
+          console.log(`🔄 Renovando disponibilidad mensual para empleado: ${employeeId}`);
+          
+          await LicenseService.renewMonthlyAvailability(employeeId);
+          
+          // Recargar disponibilidad después de renovar
+          await get().loadEmployeeAvailability(employeeId);
+          
+          set({ isRenewing: false });
+          console.log(`✅ Disponibilidad mensual renovada para empleado: ${employeeId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al renovar disponibilidad mensual',
+            isRenewing: false,
+          });
+          console.error('❌ Error en renewMonthlyAvailability:', error);
+        }
       },
 
-      setPage: (page) => {
-        set({ currentPage: page });
-        get().loadLicenseTypes(page);
+      // ========================================
+      // GESTIÓN DE SOLICITUDES DE LICENCIAS
+      // ========================================
+
+      createLicenseRequest: async (data: CreateLicenseRequestData) => {
+        try {
+          set({ isCreatingRequest: true, error: null });
+          console.log(`🔄 Creando solicitud de licencia para empleado: ${data.employeeId}`);
+          
+          await LicenseService.createLicenseRequest(data);
+          
+          // Recargar disponibilidad después de crear la solicitud
+          await get().loadEmployeeAvailability(data.employeeId);
+          
+          set({ isCreatingRequest: false });
+          console.log(`✅ Solicitud de licencia creada para empleado: ${data.employeeId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al crear solicitud de licencia',
+            isCreatingRequest: false,
+          });
+          console.error('❌ Error en createLicenseRequest:', error);
+          throw error; // Re-lanzar para manejar en el componente
+        }
       },
 
-      // Acciones de estado
-      setLoading: (loading) => {
-        set({ loading });
+      loadEmployeeLicenseRequests: async (employeeId: string) => {
+        try {
+          set({ loading: true, error: null });
+          console.log(`📋 Cargando solicitudes de licencia para empleado: ${employeeId}`);
+          
+          const requests = await LicenseService.getEmployeeLicenseRequests(employeeId);
+          
+          set({ licenseRequests: requests, loading: false });
+          console.log(`✅ Solicitudes de licencia cargadas para empleado: ${employeeId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al cargar solicitudes de licencia',
+            loading: false,
+          });
+          console.error('❌ Error en loadEmployeeLicenseRequests:', error);
+        }
       },
 
-      setError: (error) => {
-        set({ error });
+      updateLicenseRequest: async (requestId: string, updates: Partial<LicenseRequest>) => {
+        try {
+          set({ loading: true, error: null });
+          console.log(`🔄 Actualizando solicitud de licencia: ${requestId}`);
+          
+          // Obtener la solicitud actual para saber el employeeId
+          const currentRequests = get().licenseRequests;
+          const currentRequest = currentRequests.find(req => req.id === requestId);
+          
+          if (!currentRequest) {
+            throw new Error('Solicitud no encontrada en el estado local');
+          }
+          
+          await LicenseService.updateLicenseRequest(requestId, updates);
+          
+          // Recargar solicitudes
+          const updatedRequests = currentRequests.map(req => 
+            req.id === requestId ? { ...req, ...updates } : req
+          );
+          set({ licenseRequests: updatedRequests, loading: false });
+          
+          // Recargar disponibilidad del empleado
+          await get().loadEmployeeAvailability(currentRequest.employeeId);
+          
+          console.log(`✅ Solicitud de licencia actualizada: ${requestId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al actualizar solicitud de licencia',
+            loading: false,
+          });
+          console.error('❌ Error en updateLicenseRequest:', error);
+        }
+      },
+
+      deleteLicenseRequest: async (requestId: string) => {
+        try {
+          set({ loading: true, error: null });
+          console.log(`🗑️ Eliminando solicitud de licencia: ${requestId}`);
+          
+          // Obtener la solicitud actual para saber el employeeId
+          const currentRequests = get().licenseRequests;
+          const currentRequest = currentRequests.find(req => req.id === requestId);
+          
+          if (!currentRequest) {
+            throw new Error('Solicitud no encontrada en el estado local');
+          }
+          
+          await LicenseService.deleteLicenseRequest(requestId);
+          
+          // Remover de la lista local
+          const filteredRequests = currentRequests.filter(req => req.id !== requestId);
+          set({ licenseRequests: filteredRequests, loading: false });
+          
+          // Recargar disponibilidad del empleado
+          await get().loadEmployeeAvailability(currentRequest.employeeId);
+          
+          console.log(`✅ Solicitud de licencia eliminada: ${requestId}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al eliminar solicitud de licencia',
+            loading: false,
+          });
+          console.error('❌ Error en deleteLicenseRequest:', error);
+        }
+      },
+
+      // ========================================
+      // UTILIDADES
+      // ========================================
+
+      clearState: () => {
+        set(initialState);
       },
 
       clearError: () => {
@@ -302,9 +418,8 @@ export const useLicenseStore = create<LicenseStore>()(
     {
       name: 'license-store',
       partialize: (state) => ({
-        filters: state.filters,
-        sortOptions: state.sortOptions,
-        pageSize: state.pageSize,
+        licenseTypes: state.licenseTypes,
+        currentLicenseType: state.currentLicenseType,
       }),
     }
   )

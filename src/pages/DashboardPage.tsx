@@ -1,304 +1,360 @@
-import React from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { Button } from '../components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Header } from '../components/layout/Header';
 import { 
   Users, 
   FileText, 
-  Settings, 
-  LogOut, 
-  Home,
-  BarChart3,
-  Clock,
-  CheckCircle,
-  Calendar
+  BarChart3, 
+  Plus, 
+  Clock, 
+  CheckCircle, 
+  XCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useEmployeeStore } from '../stores/employeeStore';
 
-export const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuthStore();
+export function DashboardPage() {
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-  };
-
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Array<{
+    title: string;
+    value: string;
+    change: string;
+    changeType: 'positive' | 'negative' | 'neutral';
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bgColor: string;
+  }>>([
     {
-      title: 'Empleados Activos',
-      value: '156',
-      change: '+12%',
+      title: 'Total Empleados',
+      value: '0',
+      change: '0%',
+      changeType: 'neutral',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'Solicitudes Pendientes',
-      value: '23',
-      change: '+5%',
-      icon: FileText,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    },
-    {
-      title: 'Licencias Aprobadas',
-      value: '89',
-      change: '+18%',
+      title: 'Empleados Activos',
+      value: '0',
+      change: '0%',
+      changeType: 'neutral',
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Tipos de Licencia',
-      value: '16',
+      title: 'Empleados Inactivos',
+      value: '0',
       change: '0%',
-      icon: Settings,
+      changeType: 'neutral',
+      icon: XCircle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50'
+    },
+    {
+      title: 'Departamentos',
+      value: '0',
+      change: '0',
+      changeType: 'neutral',
+      icon: FileText,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }
-  ];
+  ]);
+
+  // Obtener datos de los stores
+  const { employees, loadEmployees } = useEmployeeStore();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  // Cargar datos reales
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        await loadEmployees();
+      } catch (error) {
+        console.error('Error cargando datos del dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [loadEmployees]);
+
+  // Calcular estadísticas en tiempo real
+  useEffect(() => {
+    if (!loading) {
+      // Debug: Log de datos recibidos
+      console.log('🔍 DASHBOARD DEBUG - Datos recibidos:');
+      console.log('Empleados:', employees.length, employees);
+
+      // Empleados activos
+      const activeEmployees = employees.filter(emp => emp.isActive).length;
+      
+      // Empleados inactivos
+      const inactiveEmployees = employees.filter(emp => !emp.isActive).length;
+      
+      // Departamentos únicos
+      const uniqueDepartments = new Set(employees.map(emp => emp.department)).size;
+
+      console.log('🔍 DASHBOARD DEBUG - Cálculos:');
+      console.log('Empleados activos:', activeEmployees);
+      console.log('Empleados inactivos:', inactiveEmployees);
+      console.log('Departamentos únicos:', uniqueDepartments);
+
+      setStats([
+        {
+          title: 'Total Empleados',
+          value: employees.length.toString(),
+          change: '0%',
+          changeType: 'neutral',
+          icon: Users,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50'
+        },
+        {
+          title: 'Empleados Activos',
+          value: activeEmployees.toString(),
+          change: '0%',
+          changeType: activeEmployees > 0 ? 'positive' : 'neutral',
+          icon: CheckCircle,
+          color: 'text-green-600',
+          bgColor: 'bg-green-50'
+        },
+        {
+          title: 'Empleados Inactivos',
+          value: inactiveEmployees.toString(),
+          change: '0%',
+          changeType: inactiveEmployees > 0 ? 'negative' : 'neutral',
+          icon: XCircle,
+          color: 'text-red-600',
+          bgColor: 'bg-red-50'
+        },
+        {
+          title: 'Departamentos',
+          value: uniqueDepartments.toString(),
+          change: '0',
+          changeType: 'neutral',
+          icon: FileText,
+          color: 'text-purple-600',
+          bgColor: 'bg-purple-50'
+        }
+      ]);
+    }
+  }, [employees, loading]);
 
   const quickActions = [
     {
-      title: 'Gestionar Tipos de Licencia',
-      description: 'Configurar permisos laborales',
-      icon: Settings,
-      action: () => handleNavigation('/license-types'),
-      color: 'bg-purple-500 hover:bg-purple-600'
-    },
-                               {
-              title: 'Nueva Solicitud',
-              description: 'Crear solicitud de permiso',
-              icon: FileText,
-              action: () => handleNavigation('/requests/new'),
-              color: 'bg-blue-500 hover:bg-blue-600'
-            },
-    {
-      title: 'Gestionar Empleados',
-      description: 'Ver y editar empleados',
+      title: 'Empleados',
+      description: 'Ver lista de empleados',
       icon: Users,
       action: () => handleNavigation('/employees'),
+      color: 'bg-blue-500 hover:bg-blue-600'
+    },
+    {
+      title: 'Nuevo Empleado',
+      description: 'Agregar nuevo empleado',
+      icon: Plus,
+      action: () => handleNavigation('/employees/new'),
       color: 'bg-green-500 hover:bg-green-600'
     },
-         {
-       title: 'Disponibilidad',
-       description: 'Ver balance de licencias',
-       icon: Calendar,
-       action: () => handleNavigation('/availability'),
-       color: 'bg-indigo-500 hover:bg-indigo-600'
-     },
-     {
-       title: 'Reportes',
-       description: 'Ver estadísticas',
-       icon: BarChart3,
-       action: () => handleNavigation('/reports'),
-       color: 'bg-orange-500 hover:bg-orange-600'
-     }
-  ];
-
-  const recentActivity = [
     {
-      id: 1,
-      action: 'Tipo de licencia creado',
-      user: 'Sistema',
-      time: 'Hace 2 horas',
-      type: 'success',
-      details: 'PG01 - Licencia Personal con Goce'
-    },
-    {
-      id: 2,
-      action: 'Solicitud aprobada',
-      user: 'Juan Pérez',
-      time: 'Hace 4 horas',
-      type: 'success',
-      details: 'Vacaciones anuales - 5 días'
-    },
-    {
-      id: 3,
-      action: 'Empleado registrado',
-      user: 'María García',
-      time: 'Hace 6 horas',
-      type: 'info',
-      details: 'Departamento: Recursos Humanos'
-    },
-    {
-      id: 4,
-      action: 'Solicitud rechazada',
-      user: 'Carlos López',
-      time: 'Hace 1 día',
-      type: 'warning',
-      details: 'Sin días disponibles'
+      title: 'Reportes',
+      description: 'Generar reportes',
+      icon: BarChart3,
+      action: () => handleNavigation('/reports'),
+      color: 'bg-purple-500 hover:bg-purple-600'
     }
   ];
 
+  // Generar actividad reciente basada en empleados
+  const generateRecentActivity = () => {
+    if (!employees.length) {
+      return [];
+    }
+
+    // Obtener los últimos 5 empleados ordenados por fecha de creación
+    const recentEmployees = employees
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+
+    return recentEmployees.map((employee, index) => {
+      const getTimeAgo = (date: Date) => {
+        const now = new Date();
+        const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+        
+        if (diffInHours < 1) return 'Hace menos de 1 hora';
+        if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
+        
+        return `Hace ${Math.floor(diffInDays / 7)} semana${Math.floor(diffInDays / 7) > 1 ? 's' : ''}`;
+      };
+
+      return {
+        id: index + 1,
+        employee: `${employee.firstName} ${employee.lastName}`,
+        action: 'Empleado registrado',
+        department: employee.department,
+        time: getTimeAgo(new Date(employee.createdAt)),
+        status: employee.isActive ? 'active' : 'inactive'
+      };
+    });
+  };
+
+  const recentActivity = generateRecentActivity();
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'inactive':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Home className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                Gestor de Licencias
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                  </span>
-                </div>
-                <div className="text-sm">
-                  <p className="text-gray-900 font-medium">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-gray-500 capitalize">{user?.role}</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="text-sm"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header 
+        title="Dashboard" 
+        subtitle="Bienvenido al sistema de gestión de empleados" 
+      />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              ¡Bienvenido de vuelta, {user?.firstName}!
-            </h2>
-            <p className="text-gray-600">
-              Aquí tienes un resumen de la actividad del sistema de gestión de permisos laborales.
-            </p>
-          </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className={`text-sm ${
+                      stat.changeType === 'positive' ? 'text-green-600' : 
+                      stat.changeType === 'negative' ? 'text-red-600' : 
+                      'text-gray-500'
+                    }`}>
+                      {stat.change}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {quickActions.map((action, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={action.action}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-full ${action.color} text-white`}>
+                    <action.icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{action.title}</h3>
+                    <p className="text-gray-600">{action.description}</p>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <span className={`text-sm font-medium ${
-                    stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {stat.change}
-                  </span>
-                  <span className="text-sm text-gray-500 ml-1">vs mes anterior</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          {/* Quick Actions and Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Acciones Rápidas</h3>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {quickActions.map((action, index) => (
-                    <button
-                      key={index}
-                      onClick={action.action}
-                      className={`${action.color} text-white rounded-lg p-4 text-left transition-colors`}
-                    >
-                      <action.icon className="h-6 w-6 mb-2" />
-                      <h4 className="font-medium">{action.title}</h4>
-                      <p className="text-sm opacity-90">{action.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Actividad Reciente</h3>
-              </div>
-              <div className="p-6">
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Clock className="h-5 w-5" />
+                <span>Actividad Reciente</span>
+              </CardTitle>
+              <CardDescription>
+                Últimos empleados registrados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentActivity.length > 0 ? (
                 <div className="space-y-4">
                   {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.type === 'success' ? 'bg-green-500' :
-                        activity.type === 'warning' ? 'bg-yellow-500' :
-                        'bg-blue-500'
-                      }`} />
+                    <div key={activity.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                      {getStatusIcon(activity.status)}
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-sm text-gray-500">{activity.user}</p>
-                        <p className="text-xs text-gray-400">{activity.time}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.details}</p>
+                        <p className="font-medium text-gray-900">{activity.employee}</p>
+                        <p className="text-sm text-gray-600">{activity.action} - {activity.department}</p>
+                        <p className="text-xs text-gray-500">{activity.time}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No hay actividad reciente</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* System Status */}
-          <div className="mt-6 bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Estado del Sistema</h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Base de Datos</p>
-                    <p className="text-sm text-gray-500">Conectado</p>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5" />
+                <span>Resumen</span>
+              </CardTitle>
+              <CardDescription>
+                Información general del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                  <span className="text-blue-900 font-medium">Total de Empleados</span>
+                  <span className="text-blue-900 font-bold">{employees.length}</span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Autenticación</p>
-                    <p className="text-sm text-gray-500">Activa</p>
-                  </div>
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <span className="text-green-900 font-medium">Empleados Activos</span>
+                  <span className="text-green-900 font-bold">
+                    {employees.filter(emp => emp.isActive).length}
+                  </span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Última Actualización</p>
-                    <p className="text-sm text-gray-500">Hace 5 min</p>
-                  </div>
+                <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                  <span className="text-purple-900 font-medium">Departamentos</span>
+                  <span className="text-purple-900 font-bold">
+                    {new Set(employees.map(emp => emp.department)).size}
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
-};
+}

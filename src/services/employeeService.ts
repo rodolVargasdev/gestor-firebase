@@ -16,11 +16,11 @@ import {
   type Query,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { type Employee, type Department, type SearchFilters, type SortOptions, type PaginatedResponse } from '../types';
+import { type Employee, type SearchFilters, type SortOptions, type PaginatedResponse } from '../types/index';
 
 export class EmployeeService {
   private static collectionName = 'employees';
-  private static departmentCollectionName = 'departments';
+
 
   // ===== EMPLEADOS =====
 
@@ -46,8 +46,8 @@ export class EmployeeService {
       let q: Query<DocumentData, DocumentData> = collection(db, this.collectionName);
 
       // Aplicar filtros
-      if (filters?.departmentId) {
-        q = query(q, where('departmentId', '==', filters.departmentId));
+      if (filters?.department) {
+        q = query(q, where('department', '==', filters.department));
       }
       if (filters?.status) {
         q = query(q, where('isActive', '==', filters.status === 'active'));
@@ -80,9 +80,9 @@ export class EmployeeService {
 
       return {
         data: employees,
-        total,
-        page,
-        limit: pageSize,
+        total: total,
+        page: page,
+        pageSize: pageSize,
         totalPages: Math.ceil(total / pageSize),
       };
     } catch (error) {
@@ -138,7 +138,10 @@ export class EmployeeService {
       });
 
       const newDoc = await getDoc(docRef);
-      return this.mapDocumentToEmployee(newDoc);
+      if (!newDoc.exists()) {
+        throw new Error('Error al crear empleado');
+      }
+      return this.mapDocumentToEmployee(newDoc as any);
     } catch (error) {
       console.error('Error creating employee:', error);
       throw new Error('Error al crear empleado');
@@ -155,7 +158,10 @@ export class EmployeeService {
       });
 
       const updatedDoc = await getDoc(docRef);
-      return this.mapDocumentToEmployee(updatedDoc);
+      if (!updatedDoc.exists()) {
+        throw new Error('Error al actualizar empleado');
+      }
+      return this.mapDocumentToEmployee(updatedDoc as any);
     } catch (error) {
       console.error('Error updating employee:', error);
       throw new Error('Error al actualizar empleado');
@@ -266,7 +272,7 @@ export class EmployeeService {
 
       // Contar por departamento
       allEmployees.forEach(employee => {
-        stats.byDepartment[employee.departmentId] = (stats.byDepartment[employee.departmentId] || 0) + 1;
+        stats.byDepartment[employee.department] = (stats.byDepartment[employee.department] || 0) + 1;
       });
 
       return stats;
@@ -276,95 +282,35 @@ export class EmployeeService {
     }
   }
 
-  // ===== DEPARTAMENTOS =====
 
-  // Obtener todos los departamentos
-  static async getAllDepartments(): Promise<Department[]> {
-    try {
-      const querySnapshot = await getDocs(collection(db, this.departmentCollectionName));
-      return querySnapshot.docs.map(doc => this.mapDocumentToDepartment(doc));
-    } catch (error) {
-      console.error('Error getting departments:', error);
-      throw new Error('Error al obtener departamentos');
-    }
-  }
-
-  // Obtener departamentos activos
-  static async getActiveDepartments(): Promise<Department[]> {
-    try {
-      const q = query(
-        collection(db, this.departmentCollectionName),
-        where('isActive', '==', true),
-        orderBy('name')
-      );
-
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => this.mapDocumentToDepartment(doc));
-    } catch (error) {
-      console.error('Error getting active departments:', error);
-      throw new Error('Error al obtener departamentos activos');
-    }
-  }
-
-  // Crear un nuevo departamento
-  static async createDepartment(departmentData: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Promise<Department> {
-    try {
-      const docRef = await addDoc(collection(db, this.departmentCollectionName), {
-        ...departmentData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      const newDoc = await getDoc(docRef);
-      return this.mapDocumentToDepartment(newDoc);
-    } catch (error) {
-      console.error('Error creating department:', error);
-      throw new Error('Error al crear departamento');
-    }
-  }
 
   // ===== MÉTODOS PRIVADOS =====
 
   // Mapear documento de Firestore a objeto Employee
-  private static mapDocumentToEmployee(doc: QueryDocumentSnapshot<DocumentData> | any): Employee {
+  private static mapDocumentToEmployee(doc: QueryDocumentSnapshot<DocumentData>): Employee {
     const data = doc.data();
     return {
       id: doc.id,
-      userId: data.userId,
       employeeId: data.employeeId,
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
       phone: data.phone,
-      departmentId: data.departmentId,
+      department: data.department,
       position: data.position,
-      hireDate: data.hireDate.toDate(),
+      employeeType: data.employeeType || 'operativo',
+      hireDate: data.hireDate?.toDate ? data.hireDate.toDate() : new Date(),
+      birthDate: data.birthDate?.toDate ? data.birthDate.toDate() : new Date(),
       salary: data.salary,
-      currency: data.currency,
-      isActive: data.isActive,
-      managerId: data.managerId,
-      avatar: data.avatar,
-      notes: data.notes,
-      emergencyContact: data.emergencyContact,
+      gender: data.gender || 'male',
+      personalType: data.personalType || 'full-time',
       address: data.address,
-      gender: data.gender || 'both',
-      personalType: data.personalType || 'permanent',
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
+      emergencyContact: data.emergencyContact,
+      isActive: data.isActive,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
     };
   }
 
-  // Mapear documento de Firestore a objeto Department
-  private static mapDocumentToDepartment(doc: QueryDocumentSnapshot<DocumentData> | any): Department {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      name: data.name,
-      description: data.description,
-      managerId: data.managerId,
-      isActive: data.isActive,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
-    };
-  }
+
 }

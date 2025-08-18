@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { type Employee, type Department, type SearchFilters, type SortOptions } from '../types';
+import { type Employee, type SearchFilters, type SortOptions } from '../types/index';
 import { EmployeeService } from '../services/employeeService';
 
 interface EmployeeState {
   // Estado de los datos
   employees: Employee[];
-  departments: Department[];
+
   currentEmployee: Employee | null;
   loading: boolean;
   error: string | null;
@@ -30,11 +30,12 @@ interface EmployeeActions {
   // Acciones de carga de datos
   loadEmployees: (page?: number, filters?: SearchFilters, sort?: SortOptions) => Promise<void>;
   loadEmployeeById: (id: string) => Promise<void>;
-  loadDepartments: () => Promise<void>;
+
   refreshEmployees: () => Promise<void>;
   
   // Acciones CRUD
   createEmployee: (employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  importEmployees: (employeesData: Array<Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<{ success: number; total: number; failed: number }>;
   updateEmployee: (id: string, updates: Partial<Omit<Employee, 'id' | 'createdAt'>>) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
   
@@ -61,7 +62,7 @@ type EmployeeStore = EmployeeState & EmployeeActions;
 
 const initialState: EmployeeState = {
   employees: [],
-  departments: [],
+
   currentEmployee: null,
   loading: false,
   error: null,
@@ -127,24 +128,7 @@ export const useEmployeeStore = create<EmployeeStore>()(
         }
       },
 
-      loadDepartments: async () => {
-        try {
-          set({ loading: true, error: null });
-          
-          const departments = await EmployeeService.getActiveDepartments();
-          
-          set({
-            departments,
-            loading: false,
-          });
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-          set({
-            error: errorMessage || 'Error al cargar departamentos',
-            loading: false,
-          });
-        }
-      },
+
 
       refreshEmployees: async () => {
         await get().loadEmployees(get().currentPage);
@@ -171,6 +155,45 @@ export const useEmployeeStore = create<EmployeeStore>()(
             error: errorMessage || 'Error al crear empleado',
             loading: false,
           });
+        }
+      },
+
+      // Importar múltiples empleados
+      importEmployees: async (employeesData: Array<Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>>) => {
+        try {
+          set({ loading: true, error: null });
+          
+          const createdEmployees: Employee[] = [];
+          
+          for (const employeeData of employeesData) {
+            try {
+              const newEmployee = await EmployeeService.createEmployee(employeeData);
+              createdEmployees.push(newEmployee);
+            } catch (error) {
+              console.error(`Error creando empleado ${employeeData.employeeId}:`, error);
+              // Continuar con el siguiente empleado
+            }
+          }
+          
+          // Recargar la lista
+          await get().loadEmployees(get().currentPage);
+          
+          set({
+            loading: false,
+          });
+          
+          return {
+            success: createdEmployees.length,
+            total: employeesData.length,
+            failed: employeesData.length - createdEmployees.length
+          };
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          set({
+            error: errorMessage || 'Error al importar empleados',
+            loading: false,
+          });
+          throw error;
         }
       },
 
