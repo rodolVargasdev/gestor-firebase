@@ -12,7 +12,6 @@ import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { useLicenseStore } from '../stores/licenseStore';
 import { useEmployeeStore } from '../stores/employeeStore';
 import { type LicenseType } from '../types/licenseTypes';
-import { formatDateForElSalvador } from '../utils/dateUtils';
 import { formatTimeTotal, formatInputDate } from '../utils/formUtils';
 
 const editLicenseSchema = z.object({
