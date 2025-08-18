@@ -141,7 +141,20 @@ export class EmployeeService {
       if (!newDoc.exists()) {
         throw new Error('Error al crear empleado');
       }
-      return this.mapDocumentToEmployee(newDoc as any);
+      
+      const newEmployee = this.mapDocumentToEmployee(newDoc as any);
+      
+      // Inicializar disponibilidad automáticamente
+      try {
+        const { LicenseService } = await import('./licenseService');
+        await LicenseService.initializeEmployeeAvailability(newEmployee.id);
+        console.log('✅ Disponibilidad inicializada automáticamente para:', newEmployee.firstName, newEmployee.lastName);
+      } catch (availabilityError) {
+        console.warn('⚠️ No se pudo inicializar disponibilidad automáticamente:', availabilityError);
+        // No fallar la creación del empleado si la disponibilidad falla
+      }
+      
+      return newEmployee;
     } catch (error) {
       console.error('Error creating employee:', error);
       throw new Error('Error al crear empleado');
