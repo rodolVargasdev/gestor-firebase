@@ -164,16 +164,28 @@ export const useEmployeeStore = create<EmployeeStore>()(
           set({ loading: true, error: null });
           
           const createdEmployees: Employee[] = [];
+          const failedEmployees: Array<{ employeeId: string; error: string }> = [];
+          
+          console.log(`🔄 Iniciando importación de ${employeesData.length} empleados...`);
           
           for (const employeeData of employeesData) {
             try {
+              console.log(`📝 Creando empleado: ${employeeData.employeeId} - ${employeeData.firstName} ${employeeData.lastName}`);
               const newEmployee = await EmployeeService.createEmployee(employeeData);
               createdEmployees.push(newEmployee);
+              console.log(`✅ Empleado creado exitosamente: ${newEmployee.employeeId}`);
             } catch (error) {
-              console.error(`Error creando empleado ${employeeData.employeeId}:`, error);
+              const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+              console.error(`❌ Error creando empleado ${employeeData.employeeId}:`, errorMessage);
+              failedEmployees.push({
+                employeeId: employeeData.employeeId,
+                error: errorMessage
+              });
               // Continuar con el siguiente empleado
             }
           }
+          
+          console.log(`📊 Importación completada: ${createdEmployees.length} exitosos, ${failedEmployees.length} fallidos`);
           
           // Recargar la lista
           await get().loadEmployees(get().currentPage);
@@ -185,7 +197,8 @@ export const useEmployeeStore = create<EmployeeStore>()(
           return {
             success: createdEmployees.length,
             total: employeesData.length,
-            failed: employeesData.length - createdEmployees.length
+            failed: failedEmployees.length,
+            failedDetails: failedEmployees
           };
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
