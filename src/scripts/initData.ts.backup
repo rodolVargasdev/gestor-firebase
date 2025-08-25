@@ -1,0 +1,40 @@
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { type User } from '../types';
+
+// Usuario de prueba para desarrollo
+const testUser: Omit<User, 'id' | 'createdAt' | 'updatedAt'> = {
+  email: 'admin@test.com',
+  displayName: 'Administrador de Prueba',
+  role: 'super_admin',
+  isActive: true,
+};
+
+export async function initializeTestData() {
+  try {
+    console.log('Inicializando datos de prueba...');
+    
+    // Crear usuario de prueba
+    const userRef = doc(db, 'users', 'test-admin-user');
+    await setDoc(userRef, {
+      ...testUser,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    });
+    
+    console.log('✅ Usuario de prueba creado exitosamente');
+    console.log('📧 Email: admin@test.com');
+    console.log('🔑 Contraseña: 123456');
+    console.log('👤 Rol: Super Administrador');
+    
+  } catch (error) {
+    console.error('❌ Error al inicializar datos de prueba:', error);
+  }
+}
+
+// Ejecutar si se llama directamente
+if (typeof window !== 'undefined') {
+  // Solo en el navegador
+  (window as any).initializeTestData = initializeTestData;
+}

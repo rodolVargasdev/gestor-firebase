@@ -1,0 +1,44 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type LicenseType @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+}
+
+type License @table {
+  user: User
+  licenseType: LicenseType
+  name: String!
+  expirationDate: Date!
+  issueDate: Date!
+  createdAt: Timestamp!
+  licenseNumber: String
+  issuingAuthority: String
+  renewalFrequency: String
+  status: String
+  notes: String
+}
+
+type Document @table {
+  license: License
+  fileName: String!
+  fileUrl: String!
+  fileType: String!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Notification @table {
+  license: License
+  notificationDate: Timestamp!
+  message: String!
+  status: String!
+  createdAt: Timestamp!
+  deliveryMethod: String
+}

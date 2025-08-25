@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "tu-proyecto-firebase-id",
+    "dev": "tu-proyecto-dev-id"
+  },
+  "targets": {},
+  "etags": {}
+}
